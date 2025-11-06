@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2023-2025, Songlin Yang, Yu Zhang
 
+
 from __future__ import annotations
 
 import warnings
@@ -132,6 +133,13 @@ class Attention(nn.Module):
                 k = rearrange(k, '... (h d) -> ... h d', d=self.head_dim)
                 v = rearrange(v, '... (h d) -> ... h d', d=self.head_dim)
 
+        if q.dtype == torch.float32:
+            q = q.to(torch.float16)
+            k = k.to(torch.float16)
+            v = v.to(torch.float16)
+            cast_16 = True
+        else:
+            cast_16 = False
         # Contains at least one padding token in the sequence
         if attention_mask is not None:
             if q.shape[1] == 1 and self.window_size is not None:
@@ -165,6 +173,8 @@ class Attention(nn.Module):
                 causal=True,
                 window_size=(-1, -1) if self.window_size is None else (self.window_size-1, 0)
             )
+        if cast_16:
+            o = o.to(torch.float32)
         o = o.reshape(batch_size, q_len, -1)
         o = self.o_proj(o)
 

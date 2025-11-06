@@ -271,6 +271,13 @@ class GatedDeltaNet(nn.Module):
         g = -self.A_log.float().exp() * F.softplus(self.a_proj(hidden_states).float() + self.dt_bias)
 
         recurrent_state = last_state['recurrent_state'] if last_state is not None else None
+        if q.dtype == torch.float32:
+            q = q.to(torch.float16)
+            k = k.to(torch.float16)
+            v = v.to(torch.float16)
+            cast_16 = True
+        else:
+            cast_16 = False
         if mode == 'chunk':
             o, recurrent_state = chunk_gated_delta_rule(
                 q=q,
@@ -297,6 +304,8 @@ class GatedDeltaNet(nn.Module):
             )
         else:
             raise NotImplementedError(f"Not supported mode `{mode}`.")
+        if cast_16:
+            o = o.to(torch.float32)
 
         if past_key_values is not None:
             past_key_values.update(

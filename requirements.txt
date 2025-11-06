@@ -1,0 +1,13 @@
+torch==2.7.0
+transformers==4.49.0
+datasets==3.3.2
+lm-eval @ git+https://github.com/EleutherAI/lm-evaluation-harness.git@147e9d61
+torchtitan @ git+https://github.com/pytorch/torchtitan.git@0b44d4c
+flash-attn>=2.7.4.post1
+causal-conv1d>=1.4.0
+torchdata
+einops
+ninja
+wandb
+tiktoken
+tensorboard

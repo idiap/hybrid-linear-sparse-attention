@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2023-2025, Songlin Yang, Yu Zhang
 
+#
+# SPDX-FileCopyrightText: Copyright © 2023-2025, Songlin Yang, Yu Zhang
+# SPDX-FileCopyrightText: Copyright © 2025 Idiap Research Institute <contact@idiap.ch>
+#
+# SPDX-FileContributor: Mutian He <mutian.he@idiap.ch>
+#
+# SPDX-License-Identifier: MIT
+#
+
 from typing import Optional, Tuple, Union
 
 import torch
@@ -442,7 +451,7 @@ class RotaryEmbedding(nn.Module):
     def forward(
         self,
         q: torch.Tensor,
-        k: torch.Tensor,
+        k: Optional[torch.Tensor],
         seqlen_offset: Union[int, torch.Tensor] = 0,
         cu_seqlens: Optional[torch.Tensor] = None,
         max_seqlen: Optional[int] = None,
@@ -477,7 +486,7 @@ class RotaryEmbedding(nn.Module):
                 interleaved=self.interleaved,
                 seqlen_offsets=seqlen_offset,
                 cu_seqlens=cu_seqlens,
-            )
+            ) if k is not None else None
 
         else:
             q = rotary_embedding(
@@ -495,6 +504,17 @@ class RotaryEmbedding(nn.Module):
                 interleaved=self.interleaved,
                 seqlen_offsets=seqlen_offset,
                 cu_seqlens=cu_seqlens,
-            )
+            ) if k is not None else None
 
         return q, k
+
+    def derope(self, x, seqlen_offset=0):
+        self._update_cos_sin_cache(x.shape[1] + seqlen_offset, device=x.device, dtype=x.dtype)
+        x = rotary_embedding(
+                x,
+                self._cos_cached,
+                -self._sin_cached,
+                interleaved=self.interleaved,
+                seqlen_offsets=seqlen_offset,
+            )
+        return x
